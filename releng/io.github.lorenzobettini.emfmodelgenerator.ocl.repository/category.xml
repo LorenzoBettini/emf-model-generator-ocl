@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site>
+	<feature url="features/io.github.lorenzobettini.emfmodelgenerator.ocl.feature_0.1.0.qualifier.jar"
+		id="io.github.lorenzobettini.emfmodelgenerator.ocl.feature" version="0.1.0.qualifier">
+		<category name="io.github.lorenzobettini.emfmodelgenerator.ocl"/>
+	</feature>
+	<feature
+		url="features/io.github.lorenzobettini.emfmodelgenerator.ocl.source.feature_0.1.0.qualifier.jar"
+		id="io.github.lorenzobettini.emfmodelgenerator.ocl.source.feature" version="0.1.0.qualifier">
+		<category name="io.github.lorenzobettini.emfmodelgenerator.ocl.source"/>
+	</feature>
+	<category-def name="io.github.lorenzobettini.emfmodelgenerator.ocl"
+		label="EMF Model Generator OCL">
+		<description>Headless OCL validation companion for EMF Model Generator.</description>
+	</category-def>
+	<category-def name="io.github.lorenzobettini.emfmodelgenerator.ocl.source"
+		label="EMF Model Generator OCL Source">
+		<description>Source for the OCL validation companion.</description>
+	</category-def>
+	<repository-reference location="https://download.eclipse.org/releases/2026-06"
+		enabled="true"/>
+	<repository-reference
+		location="https://download.eclipse.org/modeling/mdt/ocl/builds/release/6.24.0"
+		enabled="true"/>
+	<repository-reference
+		location="https://lorenzobettini.github.io/emf-model-generator-update-site/"
+		enabled="true"/>
+</site>

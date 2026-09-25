@@ -1,0 +1,6 @@
+import education : '../education.ecore'
+
+package education
+	context Student
+		inv Minor: self.age < 18
+endpackage

@@ -1,0 +1,4 @@
+import missing : '../missing.ecore'
+
+context missing::Student
+	inv Adult: self.age >= 18

@@ -1,0 +1,12 @@
+import education : '../education.ecore'
+
+package education
+	context Student
+		inv Adult: self.age >= 18
+		inv NonBlankName:
+			not self.name.oclIsUndefined() and self.name.trim().size() > 0
+
+	context School
+		inv UniqueStudentIdentifiers:
+			self.students->isUnique(student | student.identifier)
+endpackage

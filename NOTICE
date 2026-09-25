@@ -1,0 +1,9 @@
+EMF Model Generator OCL
+Copyright (c) 2026 Lorenzo Bettini and contributors.
+
+This project is licensed under the Eclipse Public License 2.0. The source code is available at
+https://github.com/LorenzoBettini/emf-model-generator-ocl.
+
+Third-party components are not redistributed in this source repository. The Tycho target platform
+resolves them from the p2 repositories and Maven artifact coordinates recorded in the target
+definition; those components remain under their respective licenses.
