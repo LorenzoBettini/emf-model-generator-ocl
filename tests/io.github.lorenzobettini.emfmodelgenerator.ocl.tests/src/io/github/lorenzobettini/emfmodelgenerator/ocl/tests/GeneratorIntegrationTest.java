@@ -34,12 +34,13 @@ import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.xmi.impl.EcoreResourceFactoryImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
+import org.eclipse.ocl.pivot.validation.ValidationRegistryAdapter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import io.github.lorenzobettini.emfmodelgenerator.EMFModelGenerator;
+import io.github.lorenzobettini.emfmodelgenerator.EMFValidationException;
 import io.github.lorenzobettini.emfmodelgenerator.ocl.OCLModelValidator;
-import io.github.lorenzobettini.emfmodelgenerator.ocl.OCLValidationException;
 
 class GeneratorIntegrationTest {
 
@@ -56,12 +57,10 @@ class GeneratorIntegrationTest {
 		try (var context = generatorContext("one-root")) {
 			EObject school = context.generator().generateFrom(context.schoolClass());
 
-			try (var validator = OCLModelValidator.forOCLinEcore(context.resourceSet())) {
-				var result = validator.validate(school);
+			var result = context.generator().validate(OCLModelValidator::forOCLinEcore);
 
-				assertTrue(result.isValid(), () -> messages(result.diagnostic()));
-				assertSame(context.resourceSet(), school.eResource().getResourceSet());
-			}
+			assertTrue(result.isValid(), () -> messages(result.diagnostic()));
+			assertSame(context.resourceSet(), school.eResource().getResourceSet());
 		}
 	}
 
@@ -77,6 +76,7 @@ class GeneratorIntegrationTest {
 			ResourceSet resourceSet = generator.getResourceSet();
 			Object wildcardFactory = resourceSet.getResourceFactoryRegistry()
 					.getExtensionToFactoryMap().get("*");
+			int initialAdapters = resourceSet.eAdapters().size();
 
 			assertSame(resourceSet, school.eResource().getResourceSet());
 			assertNotNull(resourceSet.getResourceFactoryRegistry()
@@ -84,14 +84,13 @@ class GeneratorIntegrationTest {
 			assertNotNull(wildcardFactory);
 			assertFalse(resourceSet.getResourceFactoryRegistry()
 					.getExtensionToFactoryMap().containsKey("essentialocl"));
-			try (var validator = OCLModelValidator.forOCLinEcore(resourceSet)) {
-				var result = validator.validate(school);
-				assertTrue(result.isValid(), () -> messages(result.diagnostic()));
-			}
+			var result = generator.validate(OCLModelValidator::forOCLinEcore);
+			assertTrue(result.isValid(), () -> messages(result.diagnostic()));
 			assertFalse(resourceSet.getResourceFactoryRegistry()
 					.getExtensionToFactoryMap().containsKey("essentialocl"));
 			assertSame(wildcardFactory, resourceSet.getResourceFactoryRegistry()
 					.getExtensionToFactoryMap().get("*"));
+			assertEquals(initialAdapters, resourceSet.eAdapters().size());
 		} finally {
 			generator.unloadEcoreModels();
 		}
@@ -115,20 +114,23 @@ class GeneratorIntegrationTest {
 			ResourceSet resourceSet = generator.getResourceSet();
 			Object wildcardFactory = resourceSet.getResourceFactoryRegistry()
 					.getExtensionToFactoryMap().get("*");
+			var validationRegistry = ValidationRegistryAdapter.getAdapter(resourceSet);
+			assertFalse(validationRegistry.containsKey(ePackage));
 
 			assertFalse(resourceSet.getResourceFactoryRegistry()
 					.getExtensionToFactoryMap().containsKey("ocl"));
-			try (var validator = OCLModelValidator.forCompleteOCL(resourceSet,
-					URI.createFileURI(constraintsFile.toString()))) {
-				var result = validator.validate(student);
+			var constraintsURI = URI.createFileURI(constraintsFile.toString());
+			var result = generator.validate(
+					validationResourceSet -> OCLModelValidator.forCompleteOCL(
+							validationResourceSet, constraintsURI));
 
-				assertFalse(result.isValid());
-				assertTrue(messages(result.diagnostic()).contains("Adult"));
-			}
+			assertFalse(result.isValid());
+			assertTrue(messages(result.diagnostic()).contains("Adult"));
 			assertFalse(resourceSet.getResourceFactoryRegistry()
 					.getExtensionToFactoryMap().containsKey("ocl"));
 			assertSame(wildcardFactory, resourceSet.getResourceFactoryRegistry()
 					.getExtensionToFactoryMap().get("*"));
+			assertFalse(validationRegistry.containsKey(ePackage));
 		} finally {
 			generator.unloadEcoreModels();
 		}
@@ -141,16 +143,19 @@ class GeneratorIntegrationTest {
 			EObject student = students(school).getFirst();
 			EStructuralFeature age = student.eClass().getEStructuralFeature("age");
 			student.eSet(age, 17);
+			int initialAdapters = context.resourceSet().eAdapters().size();
 
-			try (var validator = OCLModelValidator.forOCLinEcore(context.resourceSet())) {
-				var exception = assertThrows(OCLValidationException.class,
-						() -> validateThenSave(context.generator(), validator, school));
+			context.generator().enableValidationBeforeSave(OCLModelValidator::forOCLinEcore);
+			var exception = assertThrows(EMFValidationException.class,
+					context.generator()::save);
 
-				assertFalse(exception.getResult().isValid());
-				assertTrue(messages(exception.getResult().diagnostic()).contains("Adult"));
-				assertEquals(17, student.eGet(age));
-				assertFalse(Files.exists(context.outputDirectory()));
-			}
+			assertFalse(exception.getResult().isValid());
+			assertTrue(messages(exception.getResult().diagnostic()).contains("Adult"));
+			assertEquals(17, student.eGet(age));
+			assertFalse(Files.exists(context.outputDirectory()));
+			assertFalse(context.resourceSet().getResourceFactoryRegistry()
+					.getExtensionToFactoryMap().containsKey("essentialocl"));
+			assertEquals(initialAdapters, context.resourceSet().eAdapters().size());
 		}
 	}
 
@@ -193,11 +198,14 @@ class GeneratorIntegrationTest {
 			EObject school = context.generator().generateFrom(context.schoolClass());
 			modelFile = Path.of(school.eResource().getURI().toFileString());
 			metamodelFile = context.metamodelFile();
+			int initialAdapters = context.resourceSet().eAdapters().size();
 
-			try (var validator = OCLModelValidator.forOCLinEcore(context.resourceSet())) {
-				validateThenSave(context.generator(), validator, school);
-			}
+			context.generator().enableValidationBeforeSave(OCLModelValidator::forOCLinEcore);
+			context.generator().save();
 			assertTrue(Files.isRegularFile(modelFile));
+			assertFalse(context.resourceSet().getResourceFactoryRegistry()
+					.getExtensionToFactoryMap().containsKey("essentialocl"));
+			assertEquals(initialAdapters, context.resourceSet().eAdapters().size());
 		}
 
 		ResourceSet reloadedResourceSet = configuredResourceSet();
@@ -256,12 +264,6 @@ class GeneratorIntegrationTest {
 		EPackage ePackage = (EPackage) resource.getContents().getFirst();
 		resourceSet.getPackageRegistry().put(ePackage.getNsURI(), ePackage);
 		return ePackage;
-	}
-
-	private static void validateThenSave(EMFModelGenerator generator,
-			OCLModelValidator validator, EObject root) throws IOException {
-		validator.validateOrThrow(root);
-		generator.save();
 	}
 
 	@SuppressWarnings("unchecked")

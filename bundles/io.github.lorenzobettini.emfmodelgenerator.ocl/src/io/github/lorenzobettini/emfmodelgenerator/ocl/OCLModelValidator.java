@@ -9,21 +9,34 @@
  *******************************************************************************/
 package io.github.lorenzobettini.emfmodelgenerator.ocl;
 
-import java.util.Collection;
-import java.util.Objects;
-
 import org.eclipse.emf.common.util.URI;
-import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 
+import io.github.lorenzobettini.emfmodelgenerator.EMFModelValidator;
 import io.github.lorenzobettini.emfmodelgenerator.ocl.internal.CompleteOCLModelValidator;
 import io.github.lorenzobettini.emfmodelgenerator.ocl.internal.OCLinEcoreModelValidator;
 
 /**
  * Validates complete EMF object graphs after generation against configured OCL constraints.
  * Implementations validate candidates but neither direct generation nor repair invalid candidates.
+ *
+ * <p>OCL validation rejects diagnostics at {@link org.eclipse.emf.common.util.Diagnostic#WARNING}
+ * and above because Eclipse OCL may report a false Boolean invariant as a warning. Ordinary
+ * constraint violations have
+ * {@link io.github.lorenzobettini.emfmodelgenerator.EMFValidationKind#VALIDATION_FAILURE} kind;
+ * setup, parser, resolution, and evaluation failures have
+ * {@link io.github.lorenzobettini.emfmodelgenerator.EMFValidationKind#VALIDATOR_FAILURE} kind.
+ * Results retain the original diagnostic tree.</p>
+ *
+ * <p>As defined by the core validator contract, validating an empty root collection produces a
+ * valid aggregate result. Null collections and null roots are rejected. A Complete OCL setup
+ * failure remains a validator failure even when the supplied collection is empty.</p>
+ *
+ * <p>Instances own OCL session resources. Direct callers must close them, normally with
+ * try-with-resources. Core generator factory-based operations create and close their validator
+ * automatically.</p>
  */
-public interface OCLModelValidator extends AutoCloseable {
+public interface OCLModelValidator extends EMFModelValidator {
 
 	/**
 	 * Creates a validation session for Pivot OCL constraints embedded in Ecore annotations.
@@ -49,59 +62,6 @@ public interface OCLModelValidator extends AutoCloseable {
 	 */
 	static OCLModelValidator forCompleteOCL(ResourceSet resourceSet, URI oclURI) {
 		return new CompleteOCLModelValidator(resourceSet, oclURI);
-	}
-
-	/**
-	 * Validates one complete generated root.
-	 *
-	 * @param root root of the object graph to validate
-	 * @return the structured validation result
-	 * @throws NullPointerException if {@code root} is {@code null}
-	 * @throws IllegalStateException if this validator has been closed
-	 */
-	OCLValidationResult validate(EObject root);
-
-	/**
-	 * Validates several complete generated roots as one operation.
-	 *
-	 * @param roots roots of the object graphs to validate
-	 * @return the structured validation result
-	 * @throws NullPointerException if the collection or any root is {@code null}
-	 * @throws IllegalArgumentException if the collection is empty
-	 * @throws IllegalStateException if this validator has been closed
-	 */
-	OCLValidationResult validateAll(Collection<? extends EObject> roots);
-
-	/**
-	 * Validates one root and throws when it is not OCL-valid with respect to the configured
-	 * constraints.
-	 *
-	 * @param root root of the object graph to validate
-	 * @throws OCLValidationException if validation fails or evaluation/setup fails
-	 */
-	default void validateOrThrow(EObject root) {
-		Objects.requireNonNull(root, "root must not be null");
-		OCLValidationResult result = Objects.requireNonNull(validate(root),
-				"validate(root) must not return null");
-		if (!result.isValid()) {
-			throw new OCLValidationException(result);
-		}
-	}
-
-	/**
-	 * Validates several roots and throws when they are not OCL-valid with respect to the configured
-	 * constraints.
-	 *
-	 * @param roots roots of the object graphs to validate
-	 * @throws OCLValidationException if validation fails or evaluation/setup fails
-	 */
-	default void validateAllOrThrow(Collection<? extends EObject> roots) {
-		Objects.requireNonNull(roots, "roots must not be null");
-		OCLValidationResult result = Objects.requireNonNull(validateAll(roots),
-				"validateAll(roots) must not return null");
-		if (!result.isValid()) {
-			throw new OCLValidationException(result);
-		}
 	}
 
 	/** Releases constraint-source resources owned by this validation session. */

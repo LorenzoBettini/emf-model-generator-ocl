@@ -20,24 +20,25 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.util.Diagnostician;
 import org.eclipse.ocl.pivot.utilities.OCL;
 
-import io.github.lorenzobettini.emfmodelgenerator.ocl.OCLDiagnosticKind;
-import io.github.lorenzobettini.emfmodelgenerator.ocl.OCLValidationResult;
+import io.github.lorenzobettini.emfmodelgenerator.EMFValidationKind;
+import io.github.lorenzobettini.emfmodelgenerator.EMFValidationResult;
 
 /** Executes the validation mechanics shared by the supported OCL constraint sources. */
 final class OCLValidationRunner {
 
 	static final String DIAGNOSTIC_SOURCE =
 			"io.github.lorenzobettini.emfmodelgenerator.ocl";
+	private static final int REJECTED_SEVERITY = Diagnostic.WARNING;
 
 	private final OCL ocl;
 	private final Diagnostician diagnostician;
 	private final Map<Object, Object> validationContext;
 	private final String aggregateDescription;
-	private final Function<RuntimeException, OCLValidationResult> failureFactory;
+	private final Function<RuntimeException, EMFValidationResult> failureFactory;
 
 	OCLValidationRunner(OCL ocl, Diagnostician diagnostician,
 			Map<Object, Object> validationContext, String aggregateDescription,
-			Function<RuntimeException, OCLValidationResult> failureFactory) {
+			Function<RuntimeException, EMFValidationResult> failureFactory) {
 		this.ocl = Objects.requireNonNull(ocl);
 		this.diagnostician = Objects.requireNonNull(diagnostician);
 		this.validationContext = Objects.requireNonNull(validationContext);
@@ -45,23 +46,18 @@ final class OCLValidationRunner {
 		this.failureFactory = Objects.requireNonNull(failureFactory);
 	}
 
-	OCLValidationResult validate(EObject root) {
+	EMFValidationResult validate(EObject root) {
 		Objects.requireNonNull(root, "root must not be null");
 		try {
 			Diagnostic diagnostic = validateDiagnostic(root);
-			return containsThrowable(diagnostic)
-					? evaluationOrSetupFailure(diagnostic)
-					: new OCLValidationResult(diagnostic);
+			return result(diagnostic, containsThrowable(diagnostic));
 		} catch (RuntimeException exception) {
 			return failureFactory.apply(exception);
 		}
 	}
 
-	OCLValidationResult validateAll(Collection<? extends EObject> roots) {
+	EMFValidationResult validateAll(Collection<? extends EObject> roots) {
 		Objects.requireNonNull(roots, "roots must not be null");
-		if (roots.isEmpty()) {
-			throw new IllegalArgumentException("roots must not be empty");
-		}
 		var aggregate = new BasicDiagnostic(DIAGNOSTIC_SOURCE, 0,
 				aggregateDescription + " of " + roots.size() + " roots", null);
 		boolean setupOrEvaluationFailed = false;
@@ -76,9 +72,7 @@ final class OCLValidationRunner {
 				setupOrEvaluationFailed = true;
 			}
 		}
-		return setupOrEvaluationFailed
-				? evaluationOrSetupFailure(aggregate)
-				: new OCLValidationResult(aggregate);
+		return result(aggregate, setupOrEvaluationFailed);
 	}
 
 	private Diagnostic validateDiagnostic(EObject root) {
@@ -90,10 +84,17 @@ final class OCLValidationRunner {
 		}
 	}
 
-	private static OCLValidationResult evaluationOrSetupFailure(Diagnostic diagnostic) {
-		return new OCLValidationResult(diagnostic,
-				OCLValidationResult.DEFAULT_REJECTED_SEVERITY,
-				OCLDiagnosticKind.EVALUATION_OR_SETUP_FAILURE);
+	static EMFValidationResult validatorFailure(Diagnostic diagnostic) {
+		return result(diagnostic, true);
+	}
+
+	private static EMFValidationResult result(Diagnostic diagnostic, boolean validatorFailure) {
+		var kind = diagnostic.getSeverity() < REJECTED_SEVERITY
+				? EMFValidationKind.VALID
+				: validatorFailure
+						? EMFValidationKind.VALIDATOR_FAILURE
+						: EMFValidationKind.VALIDATION_FAILURE;
+		return new EMFValidationResult(diagnostic, REJECTED_SEVERITY, kind);
 	}
 
 	private static boolean containsThrowable(Diagnostic diagnostic) {

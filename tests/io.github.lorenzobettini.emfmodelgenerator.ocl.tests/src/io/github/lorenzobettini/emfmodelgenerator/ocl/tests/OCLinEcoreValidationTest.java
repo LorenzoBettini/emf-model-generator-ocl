@@ -26,7 +26,8 @@ import org.eclipse.ocl.pivot.utilities.PivotConstants;
 import org.eclipse.ocl.pivot.utilities.ThreadLocalExecutor;
 import org.junit.jupiter.api.Test;
 
-import io.github.lorenzobettini.emfmodelgenerator.ocl.OCLDiagnosticKind;
+import io.github.lorenzobettini.emfmodelgenerator.EMFValidationException;
+import io.github.lorenzobettini.emfmodelgenerator.EMFValidationKind;
 import io.github.lorenzobettini.emfmodelgenerator.ocl.OCLModelValidator;
 import io.github.lorenzobettini.emfmodelgenerator.ocl.tests.fixture.EducationFixture;
 
@@ -43,7 +44,7 @@ class OCLinEcoreValidationTest {
 			var result = validator.validate(school);
 
 			assertTrue(result.isValid(), () -> messages(result.diagnostic()));
-			assertEquals(OCLDiagnosticKind.VALID, result.kind());
+			assertEquals(EMFValidationKind.VALID, result.kind());
 			assertEquals(Diagnostic.OK, result.diagnostic().getSeverity());
 		}
 		assertNoModelSpecificGlobalRegistration(fixture);
@@ -59,9 +60,14 @@ class OCLinEcoreValidationTest {
 			var result = validator.validate(school);
 
 			assertFalse(result.isValid());
+			assertEquals(EMFValidationKind.VALIDATION_FAILURE, result.kind());
 			assertTrue(result.diagnostic().getSeverity() >= Diagnostic.WARNING);
 			assertEquals(Diagnostic.WARNING, result.rejectedSeverity());
 			assertContains(result.diagnostic(), "Adult");
+			var exception = assertThrows(EMFValidationException.class,
+					() -> validator.validateOrThrow(school));
+			assertEquals(EMFValidationKind.VALIDATION_FAILURE,
+					exception.getResult().kind());
 		}
 	}
 
@@ -157,7 +163,7 @@ class OCLinEcoreValidationTest {
 			var result = validator.validate(school);
 
 			assertFalse(result.isValid());
-			assertEquals(OCLDiagnosticKind.EVALUATION_OR_SETUP_FAILURE, result.kind(),
+			assertEquals(EMFValidationKind.VALIDATOR_FAILURE, result.kind(),
 					() -> messages(result.diagnostic()));
 		}
 	}
@@ -214,9 +220,9 @@ class OCLinEcoreValidationTest {
 			assertEquals("roots must not be null",
 					assertThrows(NullPointerException.class,
 							() -> validator.validateAll(null)).getMessage());
-			assertEquals("roots must not be empty",
-					assertThrows(IllegalArgumentException.class,
-							() -> validator.validateAll(List.of())).getMessage());
+			var emptyResult = validator.validateAll(List.of());
+			assertTrue(emptyResult.isValid());
+			assertEquals(EMFValidationKind.VALID, emptyResult.kind());
 			assertEquals("roots must not contain null",
 					assertThrows(NullPointerException.class,
 							() -> validator.validateAll(java.util.Collections.singletonList(null)))

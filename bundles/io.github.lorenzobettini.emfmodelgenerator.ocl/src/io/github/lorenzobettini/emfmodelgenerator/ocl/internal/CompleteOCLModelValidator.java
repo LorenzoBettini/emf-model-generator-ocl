@@ -34,9 +34,8 @@ import org.eclipse.ocl.xtext.completeocl.CompleteOCLStandaloneSetup;
 import org.eclipse.ocl.xtext.completeocl.utilities.CompleteOCLLoader;
 import org.eclipse.ocl.xtext.essentialocl.EssentialOCLStandaloneSetup;
 
-import io.github.lorenzobettini.emfmodelgenerator.ocl.OCLDiagnosticKind;
+import io.github.lorenzobettini.emfmodelgenerator.EMFValidationResult;
 import io.github.lorenzobettini.emfmodelgenerator.ocl.OCLModelValidator;
-import io.github.lorenzobettini.emfmodelgenerator.ocl.OCLValidationResult;
 
 /** Internal adapter containing all Eclipse Complete OCL implementation dependencies. */
 public final class CompleteOCLModelValidator implements OCLModelValidator {
@@ -56,7 +55,7 @@ public final class CompleteOCLModelValidator implements OCLModelValidator {
 	private final OCL ocl;
 	private final SessionCompleteOCLLoader loader;
 	private final OCLValidationRunner validationRunner;
-	private final OCLValidationResult setupFailure;
+	private final EMFValidationResult setupFailure;
 	private boolean closed;
 
 	/**
@@ -85,7 +84,7 @@ public final class CompleteOCLModelValidator implements OCLModelValidator {
 	}
 
 	@Override
-	public synchronized OCLValidationResult validate(EObject root) {
+	public synchronized EMFValidationResult validate(EObject root) {
 		Objects.requireNonNull(root, "root must not be null");
 		checkOpen();
 		if (setupFailure != null) {
@@ -95,7 +94,7 @@ public final class CompleteOCLModelValidator implements OCLModelValidator {
 	}
 
 	@Override
-	public synchronized OCLValidationResult validateAll(Collection<? extends EObject> roots) {
+	public synchronized EMFValidationResult validateAll(Collection<? extends EObject> roots) {
 		Objects.requireNonNull(roots, "roots must not be null");
 		checkOpen();
 		validateRootsArgument(roots);
@@ -123,7 +122,7 @@ public final class CompleteOCLModelValidator implements OCLModelValidator {
 				&& adapter.getClass().getName().startsWith("org.eclipse.ocl."));
 	}
 
-	private OCLValidationResult loadAndInstall(URI oclURI) {
+	private EMFValidationResult loadAndInstall(URI oclURI) {
 		ocl.activate();
 		try {
 			var errors = new StringBuilder();
@@ -142,15 +141,15 @@ public final class CompleteOCLModelValidator implements OCLModelValidator {
 		}
 	}
 
-	private static OCLValidationResult failure(RuntimeException exception) {
+	private static EMFValidationResult failure(RuntimeException exception) {
 		return failure("Complete OCL evaluation/setup failure", exception);
 	}
 
-	private static OCLValidationResult failure(String message) {
+	private static EMFValidationResult failure(String message) {
 		return failure(message, null);
 	}
 
-	private static OCLValidationResult failure(String message, RuntimeException exception) {
+	private static EMFValidationResult failure(String message, RuntimeException exception) {
 		String detail = exception == null ? null : exception.getMessage();
 		String fullMessage = detail == null || detail.isBlank()
 				? message
@@ -159,15 +158,10 @@ public final class CompleteOCLModelValidator implements OCLModelValidator {
 		var diagnostic = new BasicDiagnostic(Diagnostic.ERROR,
 				OCLValidationRunner.DIAGNOSTIC_SOURCE, 0,
 				fullMessage, data);
-		return new OCLValidationResult(diagnostic,
-				OCLValidationResult.DEFAULT_REJECTED_SEVERITY,
-				OCLDiagnosticKind.EVALUATION_OR_SETUP_FAILURE);
+		return OCLValidationRunner.validatorFailure(diagnostic);
 	}
 
 	private static void validateRootsArgument(Collection<? extends EObject> roots) {
-		if (roots.isEmpty()) {
-			throw new IllegalArgumentException("roots must not be empty");
-		}
 		for (EObject root : roots) {
 			Objects.requireNonNull(root, "roots must not contain null");
 		}
