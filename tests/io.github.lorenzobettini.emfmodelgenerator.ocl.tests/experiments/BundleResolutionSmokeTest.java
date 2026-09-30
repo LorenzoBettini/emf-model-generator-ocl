@@ -30,7 +30,7 @@ class BundleResolutionSmokeTest {
 		Bundle coreBundle = findBundle(testBundle, "emf-model-generator");
 		assertNotNull(coreBundle);
 		Version coreVersion = coreBundle.getVersion();
-		assertTrue(coreVersion.compareTo(Version.parseVersion("1.0.0")) >= 0);
+		assertTrue(coreVersion.compareTo(Version.parseVersion("1.1.0")) >= 0);
 		assertTrue(coreVersion.compareTo(Version.parseVersion("2.0.0")) < 0);
 		assertNotNull(productionBundle.loadClass(
 				"io.github.lorenzobettini.emfmodelgenerator.EMFModelGenerator"));

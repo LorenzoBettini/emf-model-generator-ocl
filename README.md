@@ -61,7 +61,7 @@ changes. Outputs include:
 
 The build pins Tycho 5.0.4 and uses the Eclipse 2026-06 composite repository, the Eclipse OCL
 6.24.0 release repository, and a Maven target location for
-`io.github.lorenzobettini:emf-model-generator:1.0.0`. Bundle requirements accept backward-compatible
+`io.github.lorenzobettini:emf-model-generator:1.1.0`. Bundle requirements accept backward-compatible
 minor and patch updates.
 
 To test a new core version locally, install that project into the local Maven repository, update the
