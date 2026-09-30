@@ -168,6 +168,29 @@ generator.enableValidationBeforeSave(
 generator.save();
 ```
 
+## Round-trip validation
+
+Use the core round-trip facility to save, reload all saved resources into a fresh `ResourceSet`,
+and validate the reconstructed graph with OCL:
+
+```java
+EMFValidationResult roundTripResult = generator.saveAndValidateRoundTrip(
+		null, OCLModelValidator::forOCLinEcore);
+```
+
+Complete OCL uses the same factory-lambda pattern:
+
+```java
+EMFValidationResult roundTripResult = generator.saveAndValidateRoundTrip(
+		null,
+		resourceSet -> OCLModelValidator.forCompleteOCL(resourceSet, constraints));
+```
+
+The factory receives the fresh round-trip `ResourceSet`, and the generator closes the OCL session
+after validation. This operation validates the deserialized graph after files have been written; a
+non-valid result does not remove those files. Enable validation before save as shown above as well
+when an invalid in-memory candidate must prevent serialization.
+
 ## Reusable direct sessions
 
 Create a validator directly when several validations should reuse one initialized OCL environment,

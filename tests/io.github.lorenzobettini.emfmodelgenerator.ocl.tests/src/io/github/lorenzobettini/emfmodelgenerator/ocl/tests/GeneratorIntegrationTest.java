@@ -191,7 +191,7 @@ class GeneratorIntegrationTest {
 	}
 
 	@Test
-	void validGeneratedOutputCanBeSavedReloadedAndRevalidated() throws Exception {
+	void validGeneratedOutputCanBeSavedAndValidatedAfterRoundTrip() throws Exception {
 		Path modelFile;
 		Path metamodelFile;
 		try (var context = generatorContext("round-trip")) {
@@ -201,7 +201,10 @@ class GeneratorIntegrationTest {
 			int initialAdapters = context.resourceSet().eAdapters().size();
 
 			context.generator().enableValidationBeforeSave(OCLModelValidator::forOCLinEcore);
-			context.generator().save();
+			var roundTripResult = context.generator().saveAndValidateRoundTrip(
+					null, OCLModelValidator::forOCLinEcore);
+			assertTrue(roundTripResult.isValid(),
+					() -> messages(roundTripResult.diagnostic()));
 			assertTrue(Files.isRegularFile(modelFile));
 			assertFalse(context.resourceSet().getResourceFactoryRegistry()
 					.getExtensionToFactoryMap().containsKey("essentialocl"));
