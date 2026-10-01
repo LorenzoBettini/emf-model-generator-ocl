@@ -77,7 +77,7 @@ project and published separately from the core update site. Configure these site
 
 - companion: `emf-model-generator-ocl` p2 repository produced by this project (the release artifact
   or its separately published URL);
-- core: `https://lorenzobettini.github.io/emf-model-generator-update-site/`;
+- core: `https://lorenzobettini.github.io/emf-model-generator-update-site/1.1.0`;
 - Eclipse OCL 6.24.0: `https://download.eclipse.org/modeling/mdt/ocl/builds/release/6.24.0`;
 - Eclipse 2026-06: `https://download.eclipse.org/releases/2026-06`.
 
