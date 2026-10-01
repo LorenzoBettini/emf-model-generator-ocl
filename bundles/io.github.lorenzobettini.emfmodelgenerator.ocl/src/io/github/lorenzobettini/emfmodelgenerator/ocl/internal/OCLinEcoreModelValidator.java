@@ -30,9 +30,8 @@ import org.eclipse.ocl.pivot.validation.ValidationRegistryAdapter;
 import org.eclipse.ocl.xtext.essentialocl.EssentialOCLStandaloneSetup;
 import org.eclipse.ocl.xtext.oclinecore.OCLinEcoreStandaloneSetup;
 
-import io.github.lorenzobettini.emfmodelgenerator.ocl.OCLDiagnosticKind;
+import io.github.lorenzobettini.emfmodelgenerator.EMFValidationResult;
 import io.github.lorenzobettini.emfmodelgenerator.ocl.OCLModelValidator;
-import io.github.lorenzobettini.emfmodelgenerator.ocl.OCLValidationResult;
 
 /** Internal adapter containing all Eclipse OCL delegate implementation dependencies. */
 public final class OCLinEcoreModelValidator implements OCLModelValidator {
@@ -79,14 +78,14 @@ public final class OCLinEcoreModelValidator implements OCLModelValidator {
 	}
 
 	@Override
-	public synchronized OCLValidationResult validate(EObject root) {
+	public synchronized EMFValidationResult validate(EObject root) {
 		Objects.requireNonNull(root, "root must not be null");
 		checkOpen();
 		return validationRunner.validate(root);
 	}
 
 	@Override
-	public synchronized OCLValidationResult validateAll(Collection<? extends EObject> roots) {
+	public synchronized EMFValidationResult validateAll(Collection<? extends EObject> roots) {
 		Objects.requireNonNull(roots, "roots must not be null");
 		checkOpen();
 		return validationRunner.validateAll(roots);
@@ -107,7 +106,7 @@ public final class OCLinEcoreModelValidator implements OCLModelValidator {
 		}
 	}
 
-	private static OCLValidationResult setupOrEvaluationFailure(RuntimeException exception) {
+	private static EMFValidationResult setupOrEvaluationFailure(RuntimeException exception) {
 		String detail = exception.getMessage();
 		String message = "OCL evaluation/setup failure: "
 				+ (detail == null || detail.isBlank()
@@ -116,9 +115,7 @@ public final class OCLinEcoreModelValidator implements OCLModelValidator {
 		var diagnostic = new BasicDiagnostic(Diagnostic.ERROR,
 				OCLValidationRunner.DIAGNOSTIC_SOURCE, 0,
 				message, new Object[] { exception });
-		return new OCLValidationResult(diagnostic,
-				OCLValidationResult.DEFAULT_REJECTED_SEVERITY,
-				OCLDiagnosticKind.EVALUATION_OR_SETUP_FAILURE);
+		return OCLValidationRunner.validatorFailure(diagnostic);
 	}
 
 	private void checkOpen() {

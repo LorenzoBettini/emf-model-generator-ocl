@@ -61,7 +61,7 @@ changes. Outputs include:
 
 The build pins Tycho 5.0.4 and uses the Eclipse 2026-06 composite repository, the Eclipse OCL
 6.24.0 release repository, and a Maven target location for
-`io.github.lorenzobettini:emf-model-generator:1.0.0`. Bundle requirements accept backward-compatible
+`io.github.lorenzobettini:emf-model-generator:1.1.0`. Bundle requirements accept backward-compatible
 minor and patch updates.
 
 To test a new core version locally, install that project into the local Maven repository, update the
@@ -77,7 +77,7 @@ project and published separately from the core update site. Configure these site
 
 - companion: `emf-model-generator-ocl` p2 repository produced by this project (the release artifact
   or its separately published URL);
-- core: `https://lorenzobettini.github.io/emf-model-generator-update-site/`;
+- core: `https://lorenzobettini.github.io/emf-model-generator-update-site/1.1.0`;
 - Eclipse OCL 6.24.0: `https://download.eclipse.org/modeling/mdt/ocl/builds/release/6.24.0`;
 - Eclipse 2026-06: `https://download.eclipse.org/releases/2026-06`.
 
@@ -100,59 +100,113 @@ source feature is independently installable and is verified from the generated p
 
 Both modes use the caller's `ResourceSet`, preserve the complete EMF diagnostic tree, and reject
 warning-level invariant diagnostics by default. Parsing, resolution, and evaluator problems are
-reported as evaluation/setup failures rather than validation failures.
+reported as `EMFValidationKind.VALIDATOR_FAILURE` rather than ordinary
+`EMFValidationKind.VALIDATION_FAILURE` outcomes.
 
 ## Result-based validation
 
-Use `validate` when the application wants to inspect or present diagnostics:
+The primary workflow uses the generic validation facilities in EMF Model Generator 1.1.0. The
+generator supplies its exact `ResourceSet`, creates one OCL session for the call, and closes it
+afterwards:
 
 ```java
-URI constraints = URI.createFileURI("model/constraints/education.ocl");
-try (OCLModelValidator validator =
-		OCLModelValidator.forCompleteOCL(resourceSet, constraints)) {
-	OCLValidationResult result = validator.validate(generatedRoot);
-	if (result.isValid()) {
-		// The root is OCL-valid with respect to the configured constraints.
-	} else {
-		result.flattenedDiagnostics().forEach(diagnostic ->
-				System.err.println(diagnostic.getMessage()));
-	}
+EMFModelGenerator generator = new EMFModelGenerator();
+EPackage ePackage = generator.loadEcoreModel("model/education.ecore");
+EClass schoolClass = (EClass) ePackage.getEClassifier("School");
+generator.generateFrom(schoolClass);
+
+EMFValidationResult result = generator.validate(OCLModelValidator::forOCLinEcore);
+if (!result.isValid()) {
+	result.flattenedDiagnostics().forEach(diagnostic ->
+			System.err.println(diagnostic.getMessage()));
 }
 ```
 
 `result.diagnostic()` retains the original tree. `result.kind()` distinguishes a normal
-`VALIDATION_FAILURE` from an `EVALUATION_OR_SETUP_FAILURE`.
+`EMFValidationKind.VALIDATION_FAILURE` from `EMFValidationKind.VALIDATOR_FAILURE`, which represents
+OCL setup, parser, resolution, or evaluation failure. OCL uses `Diagnostic.WARNING` as its rejection
+threshold because Eclipse OCL may report a false Boolean invariant as a warning; this deliberately
+differs from the core standard EMF validator's `Diagnostic.ERROR` threshold.
 
-## Exception-based validation and generator integration
+Complete OCL uses a factory lambda that captures the constraints URI:
+
+```java
+URI constraints = URI.createFileURI("model/constraints/education.ocl");
+EMFValidationResult result = generator.validate(
+		resourceSet -> OCLModelValidator.forCompleteOCL(resourceSet, constraints));
+```
+
+## Validation before save
 
 Generation happens first; OCL validation follows and does not retry generation, repair the result,
-or change any generated value. Pass the generator's `ResourceSet` to the validator and call `save()`
-only after `validateOrThrow()` returns successfully:
+or change any generated value. For strict persistence, enable validation before saving so an invalid
+candidate throws `EMFValidationException` before the output directory is created or any resource is
+serialized:
 
 ```java
 EMFModelGenerator generator = new EMFModelGenerator();
-ResourceSet resourceSet = generator.getResourceSet();
-
 try {
 	EPackage ePackage = generator.loadEcoreModel("model/education.ecore");
 	EClass schoolClass = (EClass) ePackage.getEClassifier("School");
-	EObject school = generator.generateFrom(schoolClass);
+	generator.generateFrom(schoolClass);
 
-	try (OCLModelValidator validator = OCLModelValidator.forOCLinEcore(resourceSet)) {
-		validator.validateOrThrow(school);
-		generator.save();
-	}
-} catch (OCLValidationException exception) {
-	OCLValidationResult result = exception.getResult();
-	// Handle a validation failure or evaluation/setup failure; save() was not called.
+	generator.enableValidationBeforeSave(OCLModelValidator::forOCLinEcore);
+	generator.save();
+} catch (EMFValidationException exception) {
+	EMFValidationResult result = exception.getResult();
+	// Handle a validation failure or validator failure; nothing was serialized.
 } finally {
 	generator.unloadEcoreModels();
 }
 ```
 
-The same composition supports `validateAll(generator.generateFromSeveral(...))` and references
-between resources in the shared `ResourceSet`. Applications that own a configured `ResourceSet`
-can pass it to both `EMFModelGenerator(ResourceSet)` and the validator.
+For Complete OCL, pass the corresponding factory lambda:
+
+```java
+generator.enableValidationBeforeSave(
+		resourceSet -> OCLModelValidator.forCompleteOCL(resourceSet, constraints));
+generator.save();
+```
+
+## Round-trip validation
+
+Use the core round-trip facility to save, reload all saved resources into a fresh `ResourceSet`,
+and validate the reconstructed graph with OCL:
+
+```java
+EMFValidationResult roundTripResult = generator.saveAndValidateRoundTrip(
+		null, OCLModelValidator::forOCLinEcore);
+```
+
+Complete OCL uses the same factory-lambda pattern:
+
+```java
+EMFValidationResult roundTripResult = generator.saveAndValidateRoundTrip(
+		null,
+		resourceSet -> OCLModelValidator.forCompleteOCL(resourceSet, constraints));
+```
+
+The factory receives the fresh round-trip `ResourceSet`, and the generator closes the OCL session
+after validation. This operation validates the deserialized graph after files have been written; a
+non-valid result does not remove those files. Enable validation before save as shown above as well
+when an invalid in-memory candidate must prevent serialization.
+
+## Reusable direct sessions
+
+Create a validator directly when several validations should reuse one initialized OCL environment,
+as in evaluation or performance loops. A directly managed session must be closed by the caller:
+
+```java
+try (OCLModelValidator validator =
+		OCLModelValidator.forOCLinEcore(generator.getResourceSet())) {
+	for (EObject root : generatedRoots) {
+		validator.validateOrThrow(root); // inherited; throws EMFValidationException
+	}
+}
+```
+
+`validateAll` accepts an empty collection as a valid aggregate, while rejecting a null collection
+or null elements. A Complete OCL setup failure remains a validator failure even with no roots.
 
 ## Architecture and lifecycle
 
@@ -162,15 +216,18 @@ flowchart LR
     B --> C[OCL validation session]
     D[embedded OCLinEcore] --> C
     E[external Complete OCL] --> C
-    C --> F[OCLValidationResult]
+    C --> F[EMFValidationResult]
     F -->|valid| G[caller may save]
     F -->|validation failure or evaluation/setup failure| H[caller handles diagnostics]
 ```
 
-The exported API contains no Eclipse OCL implementation types. Internal adapters initialize one OCL
+The companion's only public type is `OCLModelValidator`, which extends the core
+`EMFModelValidator`; generic result, outcome, and exception types come from core 1.1.0. The exported
+API contains no Eclipse OCL implementation types. Internal adapters initialize one OCL
 environment per session, use ResourceSet-local validators and resource factories, restore replaced
 local registrations, dispose environments, and unload temporary Complete OCL resources in
-`close()`. Always use a validation session in try-with-resources.
+`close()`. Generator factory-based calls close their sessions automatically; direct sessions belong
+in try-with-resources.
 
 ## Limitations
 

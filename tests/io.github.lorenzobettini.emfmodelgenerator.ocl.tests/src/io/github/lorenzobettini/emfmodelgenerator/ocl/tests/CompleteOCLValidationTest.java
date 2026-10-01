@@ -31,7 +31,7 @@ import org.eclipse.emf.ecore.util.EObjectValidator;
 import org.eclipse.ocl.pivot.validation.ValidationRegistryAdapter;
 import org.junit.jupiter.api.Test;
 
-import io.github.lorenzobettini.emfmodelgenerator.ocl.OCLDiagnosticKind;
+import io.github.lorenzobettini.emfmodelgenerator.EMFValidationKind;
 import io.github.lorenzobettini.emfmodelgenerator.ocl.OCLModelValidator;
 import io.github.lorenzobettini.emfmodelgenerator.ocl.tests.fixture.EducationFixture;
 
@@ -51,7 +51,7 @@ class CompleteOCLValidationTest {
 			var result = validator.validate(school);
 
 			assertTrue(result.isValid(), () -> messages(result.diagnostic()));
-			assertEquals(OCLDiagnosticKind.VALID, result.kind());
+			assertEquals(EMFValidationKind.VALID, result.kind());
 		}
 	}
 
@@ -69,7 +69,7 @@ class CompleteOCLValidationTest {
 			var result = validator.validate(school);
 
 			assertFalse(result.isValid());
-			assertEquals(OCLDiagnosticKind.VALIDATION_FAILURE, result.kind());
+			assertEquals(EMFValidationKind.VALIDATION_FAILURE, result.kind());
 			assertContains(result.diagnostic(), "Adult");
 		}
 		assertTrue(fixture.ePackage().getEAnnotations().isEmpty());
@@ -84,10 +84,10 @@ class CompleteOCLValidationTest {
 
 		try (var validator = OCLModelValidator.forCompleteOCL(
 				fixture.resourceSet(), uri("/model/completeocl/constraints/malformed.ocl"))) {
-			var result = validator.validate(school);
+			var result = validator.validateAll(List.of());
 
 			assertFalse(result.isValid());
-			assertEquals(OCLDiagnosticKind.EVALUATION_OR_SETUP_FAILURE, result.kind());
+			assertEquals(EMFValidationKind.VALIDATOR_FAILURE, result.kind());
 			assertContains(result.diagnostic(), "malformed.ocl");
 			assertContains(result.diagnostic(), "5:3");
 		}
@@ -103,7 +103,7 @@ class CompleteOCLValidationTest {
 			var result = validator.validate(school);
 
 			assertFalse(result.isValid());
-			assertEquals(OCLDiagnosticKind.EVALUATION_OR_SETUP_FAILURE, result.kind());
+			assertEquals(EMFValidationKind.VALIDATOR_FAILURE, result.kind());
 			assertContains(result.diagnostic(), "missing.ecore");
 		}
 	}
@@ -220,6 +220,11 @@ class CompleteOCLValidationTest {
 			assertFalse(result.isValid());
 			assertEquals(2, result.diagnostic().getChildren().size());
 			assertContains(result.diagnostic(), "Adult");
+			assertTrue(validator.validateAll(List.of()).isValid());
+			assertEquals("roots must not contain null",
+					assertThrows(NullPointerException.class,
+							() -> validator.validateAll(
+									java.util.Collections.singletonList(null))).getMessage());
 		}
 	}
 

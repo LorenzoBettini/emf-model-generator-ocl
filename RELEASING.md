@@ -39,7 +39,8 @@ README, and `DEPENDENCIES.md` together.
 
    It is not a release verification substitute because it does not assemble or install the p2
    repository.
-4. Inspect the JaCoCo report and test reports. Do not lower the 90% line gate to make a release pass.
+4. Inspect the JaCoCo report and test reports. Do not lower the 100% line and branch gates for
+   hand-written non-internal production code to make a release pass.
 5. Inspect `target/installation/plugins` in the repository module. It must contain the companion,
    a compatible core 1.x bundle, and compatible Eclipse OCL 1.x bundles at or above 1.24.0. Inspect
    `target/source-installation/plugins` too; it must contain
