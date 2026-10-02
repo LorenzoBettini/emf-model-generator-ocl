@@ -76,11 +76,14 @@ final class OCLValidationRunner {
 	}
 
 	private static EMFValidationResult result(Diagnostic diagnostic, boolean validatorFailure) {
-		var kind = diagnostic.getSeverity() < REJECTED_SEVERITY
-				? EMFValidationKind.VALID
-				: validatorFailure
-						? EMFValidationKind.VALIDATOR_FAILURE
-						: EMFValidationKind.VALIDATION_FAILURE;
+		EMFValidationKind kind;
+		if (diagnostic.getSeverity() < REJECTED_SEVERITY) {
+			kind = EMFValidationKind.VALID;
+		} else if (validatorFailure) {
+			kind = EMFValidationKind.VALIDATOR_FAILURE;
+		} else {
+			kind = EMFValidationKind.VALIDATION_FAILURE;
+		}
 		return new EMFValidationResult(diagnostic, REJECTED_SEVERITY, kind);
 	}
 

@@ -27,6 +27,7 @@ import java.util.Map;
 import org.eclipse.emf.common.util.Diagnostic;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EClass;
+import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EValidator;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.impl.ExtensibleURIConverterImpl;
@@ -259,14 +260,16 @@ class CompleteOCLValidationTest {
 
 	@Test
 	void multipleRootsAndFactoryArgumentsFollowThePublicContract() {
+		var constraintsURI = uri(CONSTRAINTS);
 		assertEquals("resourceSet must not be null",
 				assertThrows(NullPointerException.class,
-						() -> OCLModelValidator.forCompleteOCL(null, uri(CONSTRAINTS)))
+						() -> OCLModelValidator.forCompleteOCL(null, constraintsURI))
 							.getMessage());
 		var fixture = fixture();
+		var resourceSet = fixture.resourceSet();
 		assertEquals("oclURI must not be null",
 				assertThrows(NullPointerException.class,
-						() -> OCLModelValidator.forCompleteOCL(fixture.resourceSet(), null))
+						() -> OCLModelValidator.forCompleteOCL(resourceSet, null))
 							.getMessage());
 		var valid = fixture.school("first");
 		fixture.student(valid, "Alice", 20, "s1");
@@ -280,10 +283,10 @@ class CompleteOCLValidationTest {
 			assertEquals(2, result.diagnostic().getChildren().size());
 			assertContains(result.diagnostic(), "Adult");
 			assertTrue(validator.validateAll(List.of()).isValid());
+			List<EObject> rootsWithNull = java.util.Collections.singletonList(null);
 			assertEquals("roots must not contain null",
 					assertThrows(NullPointerException.class,
-							() -> validator.validateAll(
-									java.util.Collections.singletonList(null))).getMessage());
+							() -> validator.validateAll(rootsWithNull)).getMessage());
 		}
 	}
 
