@@ -80,7 +80,7 @@ public final class CompleteOCLModelValidator implements OCLModelValidator {
 		var diagnostician = registry.getDiagnostician();
 		var validationContext = diagnostician.createDefaultContext();
 		validationRunner = new OCLValidationRunner(ocl, diagnostician, validationContext,
-				"Complete OCL validation", CompleteOCLModelValidator::failure);
+				"Complete OCL validation");
 	}
 
 	@Override
@@ -141,19 +141,12 @@ public final class CompleteOCLModelValidator implements OCLModelValidator {
 		}
 	}
 
-	private static EMFValidationResult failure(RuntimeException exception) {
-		return failure("Complete OCL evaluation/setup failure", exception);
-	}
-
 	private static EMFValidationResult failure(String message) {
 		return failure(message, null);
 	}
 
 	private static EMFValidationResult failure(String message, RuntimeException exception) {
-		String detail = exception == null ? null : exception.getMessage();
-		String fullMessage = detail == null || detail.isBlank()
-				? message
-				: message + ": " + detail;
+		String fullMessage = exception == null ? message : message + ": " + exception;
 		Object[] data = exception == null ? null : new Object[] { exception };
 		var diagnostic = new BasicDiagnostic(Diagnostic.ERROR,
 				OCLValidationRunner.DIAGNOSTIC_SOURCE, 0,

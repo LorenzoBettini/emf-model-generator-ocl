@@ -39,10 +39,8 @@
 												<file file="${project.basedir}/../../tests/io.github.lorenzobettini.emfmodelgenerator.ocl.tests/target/jacoco.exec"/>
 											</executiondata>
 											<structure name="EMF Model Generator OCL">
-												<classfiles>
-													<fileset dir="${project.basedir}/../../bundles/io.github.lorenzobettini.emfmodelgenerator.ocl/target/classes">
-														<exclude name="**/internal/**"/>
-													</fileset>
+											<classfiles>
+												<fileset dir="${project.basedir}/../../bundles/io.github.lorenzobettini.emfmodelgenerator.ocl/target/classes"/>
 												</classfiles>
 												<sourcefiles encoding="UTF-8">
 													<fileset dir="${project.basedir}/../../bundles/io.github.lorenzobettini.emfmodelgenerator.ocl/src"/>

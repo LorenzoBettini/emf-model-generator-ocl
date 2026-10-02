@@ -21,9 +21,15 @@ import java.io.ByteArrayOutputStream;
 import java.util.List;
 
 import org.eclipse.emf.common.util.Diagnostic;
+import org.eclipse.emf.common.util.DiagnosticChain;
+import org.eclipse.emf.ecore.EClass;
+import org.eclipse.emf.ecore.EDataType;
+import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EValidator;
+import org.eclipse.emf.ecore.util.EContentAdapter;
 import org.eclipse.ocl.pivot.utilities.PivotConstants;
 import org.eclipse.ocl.pivot.utilities.ThreadLocalExecutor;
+import org.eclipse.ocl.pivot.validation.ValidationRegistryAdapter;
 import org.junit.jupiter.api.Test;
 
 import io.github.lorenzobettini.emfmodelgenerator.EMFValidationException;
@@ -169,6 +175,20 @@ class OCLinEcoreValidationTest {
 	}
 
 	@Test
+	void runtimeEvaluationFailuresAreReportedWithUsefulFallbackMessages() {
+		var fixture = new EducationFixture();
+		var school = fixture.school("evaluation-failure");
+		try (var validator = OCLModelValidator.forOCLinEcore(fixture.resourceSet())) {
+			var registry = ValidationRegistryAdapter.getAdapter(fixture.resourceSet());
+			registry.put(fixture.ePackage(), new ThrowingValidator(new RuntimeException("boom")));
+			var result = validator.validate(school);
+
+			assertEquals(EMFValidationKind.VALIDATOR_FAILURE, result.kind());
+			assertContains(result.diagnostic(), "Validation failed with an exception");
+		}
+	}
+
+	@Test
 	void separateResourceSetsAndValidatorLifecyclesRemainIsolated() {
 		var firstFixture = new EducationFixture();
 		var firstSchool = firstFixture.school("first");
@@ -185,11 +205,17 @@ class OCLinEcoreValidationTest {
 		}
 		Object globalDelegate = EValidator.ValidationDelegate.Registry.INSTANCE
 				.get(PivotConstants.OCL_DELEGATE_URI_PIVOT);
+		var preexistingAdapter = new EContentAdapter();
+		firstFixture.resourceSet().eAdapters().add(preexistingAdapter);
 		int firstInitialAdapters = firstFixture.resourceSet().eAdapters().size();
 		int secondInitialAdapters = secondFixture.resourceSet().eAdapters().size();
 
 		var firstValidator = OCLModelValidator.forOCLinEcore(firstFixture.resourceSet());
 		var secondValidator = OCLModelValidator.forOCLinEcore(secondFixture.resourceSet());
+		var callerAdapter = new EContentAdapter();
+		firstFixture.resourceSet().eAdapters().add(callerAdapter);
+		var lateOCLAdapter = new ValidationRegistryAdapter(firstFixture.resourceSet());
+		firstFixture.resourceSet().eAdapters().add(lateOCLAdapter);
 		assertNull(ThreadLocalExecutor.basicGetEnvironmentFactory());
 		assertFalse(firstValidator.validate(firstSchool).isValid());
 		firstValidator.close();
@@ -198,7 +224,10 @@ class OCLinEcoreValidationTest {
 		secondValidator.close();
 		secondValidator.close();
 
-		assertEquals(firstInitialAdapters, firstFixture.resourceSet().eAdapters().size());
+		assertEquals(firstInitialAdapters + 1, firstFixture.resourceSet().eAdapters().size());
+		assertTrue(firstFixture.resourceSet().eAdapters().contains(preexistingAdapter));
+		assertTrue(firstFixture.resourceSet().eAdapters().contains(callerAdapter));
+		assertFalse(firstFixture.resourceSet().eAdapters().contains(lateOCLAdapter));
 		assertEquals(secondInitialAdapters, secondFixture.resourceSet().eAdapters().size());
 		assertSame(globalDelegate, EValidator.ValidationDelegate.Registry.INSTANCE
 				.get(PivotConstants.OCL_DELEGATE_URI_PIVOT));
@@ -245,6 +274,27 @@ class OCLinEcoreValidationTest {
 			result.append('\n').append(messages(child));
 		}
 		return result.toString();
+	}
+
+	private record ThrowingValidator(RuntimeException exception) implements EValidator {
+
+		@Override
+		public boolean validate(EObject object, DiagnosticChain diagnostics,
+				java.util.Map<Object, Object> context) {
+			throw exception;
+		}
+
+		@Override
+		public boolean validate(EClass eClass, EObject object, DiagnosticChain diagnostics,
+				java.util.Map<Object, Object> context) {
+			throw exception;
+		}
+
+		@Override
+		public boolean validate(EDataType eDataType, Object value, DiagnosticChain diagnostics,
+				java.util.Map<Object, Object> context) {
+			throw exception;
+		}
 	}
 
 }

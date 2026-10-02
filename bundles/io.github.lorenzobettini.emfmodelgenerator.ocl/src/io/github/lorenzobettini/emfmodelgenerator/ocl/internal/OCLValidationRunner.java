@@ -12,7 +12,6 @@ package io.github.lorenzobettini.emfmodelgenerator.ocl.internal;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Function;
 
 import org.eclipse.emf.common.util.BasicDiagnostic;
 import org.eclipse.emf.common.util.Diagnostic;
@@ -34,26 +33,19 @@ final class OCLValidationRunner {
 	private final Diagnostician diagnostician;
 	private final Map<Object, Object> validationContext;
 	private final String aggregateDescription;
-	private final Function<RuntimeException, EMFValidationResult> failureFactory;
 
 	OCLValidationRunner(OCL ocl, Diagnostician diagnostician,
-			Map<Object, Object> validationContext, String aggregateDescription,
-			Function<RuntimeException, EMFValidationResult> failureFactory) {
+			Map<Object, Object> validationContext, String aggregateDescription) {
 		this.ocl = Objects.requireNonNull(ocl);
 		this.diagnostician = Objects.requireNonNull(diagnostician);
 		this.validationContext = Objects.requireNonNull(validationContext);
 		this.aggregateDescription = Objects.requireNonNull(aggregateDescription);
-		this.failureFactory = Objects.requireNonNull(failureFactory);
 	}
 
 	EMFValidationResult validate(EObject root) {
 		Objects.requireNonNull(root, "root must not be null");
-		try {
-			Diagnostic diagnostic = validateDiagnostic(root);
-			return result(diagnostic, containsThrowable(diagnostic));
-		} catch (RuntimeException exception) {
-			return failureFactory.apply(exception);
-		}
+		Diagnostic diagnostic = validateDiagnostic(root);
+		return result(diagnostic, containsThrowable(diagnostic));
 	}
 
 	EMFValidationResult validateAll(Collection<? extends EObject> roots) {
@@ -63,14 +55,9 @@ final class OCLValidationRunner {
 		boolean setupOrEvaluationFailed = false;
 		for (EObject root : roots) {
 			Objects.requireNonNull(root, "roots must not contain null");
-			try {
-				Diagnostic diagnostic = validateDiagnostic(root);
-				aggregate.add(diagnostic);
-				setupOrEvaluationFailed |= containsThrowable(diagnostic);
-			} catch (RuntimeException exception) {
-				aggregate.add(failureFactory.apply(exception).diagnostic());
-				setupOrEvaluationFailed = true;
-			}
+			Diagnostic diagnostic = validateDiagnostic(root);
+			aggregate.add(diagnostic);
+			setupOrEvaluationFailed |= containsThrowable(diagnostic);
 		}
 		return result(aggregate, setupOrEvaluationFailed);
 	}
