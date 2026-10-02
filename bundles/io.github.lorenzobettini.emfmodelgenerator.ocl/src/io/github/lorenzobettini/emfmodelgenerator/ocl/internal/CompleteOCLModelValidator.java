@@ -84,7 +84,7 @@ public final class CompleteOCLModelValidator implements OCLModelValidator {
 	}
 
 	@Override
-	public synchronized EMFValidationResult validate(EObject root) {
+	public EMFValidationResult validate(EObject root) {
 		Objects.requireNonNull(root, "root must not be null");
 		checkOpen();
 		if (setupFailure != null) {
@@ -94,7 +94,7 @@ public final class CompleteOCLModelValidator implements OCLModelValidator {
 	}
 
 	@Override
-	public synchronized EMFValidationResult validateAll(Collection<? extends EObject> roots) {
+	public EMFValidationResult validateAll(Collection<? extends EObject> roots) {
 		Objects.requireNonNull(roots, "roots must not be null");
 		checkOpen();
 		validateRootsArgument(roots);
@@ -105,7 +105,7 @@ public final class CompleteOCLModelValidator implements OCLModelValidator {
 	}
 
 	@Override
-	public synchronized void close() {
+	public void close() {
 		if (closed) {
 			return;
 		}
