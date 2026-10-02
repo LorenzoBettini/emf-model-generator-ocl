@@ -18,16 +18,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.List;
+import java.util.Map;
 
 import org.eclipse.emf.common.util.Diagnostic;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EValidator;
 import org.eclipse.emf.ecore.resource.Resource;
+import org.eclipse.emf.ecore.resource.impl.ExtensibleURIConverterImpl;
 import org.eclipse.emf.ecore.xmi.impl.XMIResourceFactoryImpl;
 import org.eclipse.emf.ecore.util.EObjectValidator;
+import org.eclipse.emf.ecore.util.EContentAdapter;
 import org.eclipse.ocl.pivot.validation.ValidationRegistryAdapter;
 import org.junit.jupiter.api.Test;
 
@@ -109,6 +114,57 @@ class CompleteOCLValidationTest {
 	}
 
 	@Test
+	void documentWithoutAnImportedPackageIsASetupFailure() {
+		var fixture = fixture();
+
+		try (var validator = OCLModelValidator.forCompleteOCL(
+				fixture.resourceSet(), uri("/model/completeocl/constraints/empty.ocl"))) {
+			var result = validator.validateAll(List.of());
+
+			assertEquals(EMFValidationKind.VALIDATOR_FAILURE, result.kind());
+			assertContains(result.diagnostic(), "does not complement an imported EPackage");
+		}
+	}
+
+	@Test
+	void resourceLoadingExceptionIsASetupFailure() {
+		var fixture = fixture();
+		var brokenURI = URI.createURI("broken:/constraints.ocl");
+		fixture.resourceSet().setURIConverter(new ExtensibleURIConverterImpl() {
+			@Override
+			public InputStream createInputStream(URI uri, Map<?, ?> options) throws IOException {
+				if (brokenURI.equals(uri)) {
+					throw new IllegalStateException("broken input");
+				}
+				return super.createInputStream(uri, options);
+			}
+		});
+
+		try (var validator = OCLModelValidator.forCompleteOCL(
+				fixture.resourceSet(), brokenURI)) {
+			var result = validator.validateAll(List.of());
+
+			assertEquals(EMFValidationKind.VALIDATOR_FAILURE, result.kind());
+			assertContains(result.diagnostic(), "broken input");
+		}
+	}
+
+	@Test
+	void loaderErrorCallbackReturnsFailure() throws Exception {
+		var fixture = fixture();
+		try (var validator = OCLModelValidator.forCompleteOCL(
+				fixture.resourceSet(), uri(CONSTRAINTS))) {
+			var loaderField = validator.getClass().getDeclaredField("loader");
+			loaderField.setAccessible(true);
+			Object loader = loaderField.get(validator);
+			var error = loader.getClass().getDeclaredMethod("error", String.class, String.class);
+			error.setAccessible(true);
+
+			assertFalse((boolean) error.invoke(loader, "primary", "detail"));
+		}
+	}
+
+	@Test
 	void separateDocumentsInSeparateResourceSetsDoNotLeakConstraints() {
 		var adultFixture = fixture();
 		var adultSchool = adultFixture.school("adult-document");
@@ -159,6 +215,8 @@ class CompleteOCLValidationTest {
 
 		var validator = OCLModelValidator.forCompleteOCL(
 				fixture.resourceSet(), uri(CONSTRAINTS));
+		var callerAdapter = new EContentAdapter();
+		fixture.resourceSet().eAdapters().add(callerAdapter);
 		assertTrue(fixture.resourceSet().getResources().size() > initialResources);
 		assertTrue(validator.validate(school).isValid());
 		var callerOwnedResource = fixture.school("created-after-validator").eResource();
@@ -167,7 +225,8 @@ class CompleteOCLValidationTest {
 
 		assertEquals(initialResources + 1, fixture.resourceSet().getResources().size());
 		assertTrue(fixture.resourceSet().getResources().contains(callerOwnedResource));
-		assertEquals(initialAdapters, fixture.resourceSet().eAdapters().size());
+		assertEquals(initialAdapters + 1, fixture.resourceSet().eAdapters().size());
+		assertTrue(fixture.resourceSet().eAdapters().contains(callerAdapter));
 	}
 
 	@Test

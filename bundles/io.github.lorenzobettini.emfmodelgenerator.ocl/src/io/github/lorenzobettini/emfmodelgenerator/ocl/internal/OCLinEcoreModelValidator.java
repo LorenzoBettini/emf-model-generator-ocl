@@ -15,8 +15,6 @@ import java.util.Objects;
 import java.util.Set;
 
 import org.eclipse.emf.common.notify.Adapter;
-import org.eclipse.emf.common.util.BasicDiagnostic;
-import org.eclipse.emf.common.util.Diagnostic;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EValidator;
 import org.eclipse.emf.ecore.resource.ResourceSet;
@@ -74,7 +72,7 @@ public final class OCLinEcoreModelValidator implements OCLModelValidator {
 		// between validation calls so other OCL environments can use the same thread.
 		ocl.deactivate();
 		validationRunner = new OCLValidationRunner(ocl, diagnostician, validationContext,
-				"OCL validation", OCLinEcoreModelValidator::setupOrEvaluationFailure);
+				"OCL validation");
 	}
 
 	@Override
@@ -104,18 +102,6 @@ public final class OCLinEcoreModelValidator implements OCLModelValidator {
 		} finally {
 			resourceFactoryRegistration.restore();
 		}
-	}
-
-	private static EMFValidationResult setupOrEvaluationFailure(RuntimeException exception) {
-		String detail = exception.getMessage();
-		String message = "OCL evaluation/setup failure: "
-				+ (detail == null || detail.isBlank()
-						? exception.getClass().getSimpleName()
-						: detail);
-		var diagnostic = new BasicDiagnostic(Diagnostic.ERROR,
-				OCLValidationRunner.DIAGNOSTIC_SOURCE, 0,
-				message, new Object[] { exception });
-		return OCLValidationRunner.validatorFailure(diagnostic);
 	}
 
 	private void checkOpen() {
