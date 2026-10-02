@@ -35,6 +35,9 @@ import io.github.lorenzobettini.emfmodelgenerator.ocl.internal.OCLinEcoreModelVa
  * <p>Instances own OCL session resources. Direct callers must close them, normally with
  * try-with-resources. Core generator factory-based operations create and close their validator
  * automatically.</p>
+ *
+ * <p>Validator instances are not thread-safe, consistently with the EMF {@link ResourceSet} and
+ * object graphs on which they operate.</p>
  */
 public interface OCLModelValidator extends EMFModelValidator {
 
