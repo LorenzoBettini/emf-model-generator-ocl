@@ -58,8 +58,6 @@ class OCLValidationExperimentTest {
 	private static final String RESTRICTED = "restricted-21-24";
 	private static final String WARM_UP = "warm-up-discarded";
 	private static final String INVARIANT = "AtLeast21";
-	private static final String CORE_VERSION = "1.1.0";
-	private static final String OCL_VERSION = "6.24.0";
 	private static final String COMMAND = "./mvnw verify -am "
 			+ "-pl :io.github.lorenzobettini.emfmodelgenerator.ocl.tests "
 			+ "-Dtycho.localArtifacts=ignore -Dtest=OCLValidationExperimentTest "
@@ -301,8 +299,6 @@ class OCLValidationExperimentTest {
 				.append(System.getProperty("os.arch")).append('\n')
 				.append("Available processors: ")
 				.append(Runtime.getRuntime().availableProcessors()).append('\n')
-				.append("EMF Model Generator: ").append(CORE_VERSION).append('\n')
-				.append("Eclipse OCL Pivot: ").append(OCL_VERSION).append("\n\n")
 				.append("Method\n")
 				.append("------\n")
 				.append("Four fresh candidates (ages 0, 21, 0, 21) warm the JVM and are ")
