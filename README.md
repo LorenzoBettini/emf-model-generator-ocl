@@ -208,6 +208,26 @@ try (OCLModelValidator validator =
 `validateAll` accepts an empty collection as a valid aggregate, while rejecting a null collection
 or null elements. A Complete OCL setup failure remains a validator failure even with no roots.
 
+## Controlled evaluation experiment
+
+`OCLValidationExperimentTest` provides an opt-in, headless experiment over explicitly selected
+ages for the education fixture. Each candidate has a fresh generator, `ResourceSet`, resource, and
+validator; the finite sweeps are caller-chosen configurations, not generator retries or search.
+Run it with:
+
+```sh
+./mvnw verify -am -pl :io.github.lorenzobettini.emfmodelgenerator.ocl.tests \
+  -Dtycho.localArtifacts=ignore -Dtest=OCLValidationExperimentTest \
+  -Dtycho.testArgLine=-Docl.validation.experiment=true
+```
+
+The test writes `observations.csv` and `summary.txt` below
+`tests/io.github.lorenzobettini.emfmodelgenerator.ocl.tests/target/ocl-validation-experiment/`.
+CSV columns identify the scenario, configured age, validation kind, model size, invariant
+diagnostic, generation time, OCL setup-plus-first-validation time, and their continuous combined
+interval. Normal builds retain deterministic semantic assertions but skip measurement and report
+generation. Timings are machine-sensitive observations without performance thresholds.
+
 ## Architecture and lifecycle
 
 ```mermaid
