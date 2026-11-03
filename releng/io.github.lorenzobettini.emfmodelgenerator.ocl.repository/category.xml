@@ -23,6 +23,6 @@
 		location="https://download.eclipse.org/modeling/mdt/ocl/builds/release/6.24.0"
 		enabled="true"/>
 	<repository-reference
-		location="https://lorenzobettini.github.io/emf-model-generator-update-site/1.1.0"
+		location="https://lorenzobettini.github.io/emf-model-generator-update-site/2.0.0"
 		enabled="true"/>
 </site>

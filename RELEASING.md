@@ -42,7 +42,7 @@ README, and `DEPENDENCIES.md` together.
 4. Inspect the JaCoCo report and test reports. Do not lower the 100% line and branch gates for
    hand-written non-internal production code to make a release pass.
 5. Inspect `target/installation/plugins` in the repository module. It must contain the companion,
-   a compatible core 1.x bundle, and compatible Eclipse OCL 1.x bundles at or above 1.24.0. Inspect
+   a compatible core 2.x bundle, and compatible Eclipse OCL 1.x bundles at or above 1.24.0. Inspect
    `target/source-installation/plugins` too; it must contain
    `io.github.lorenzobettini.emfmodelgenerator.ocl.source`.
 6. Test the generated repository in a clean Eclipse 2026-06-compatible installation using the four

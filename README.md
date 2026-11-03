@@ -61,7 +61,7 @@ changes. Outputs include:
 
 The build pins Tycho 5.0.4 and uses the Eclipse 2026-06 composite repository, the Eclipse OCL
 6.24.0 release repository, and a Maven target location for
-`io.github.lorenzobettini:emf-model-generator:1.1.0`. Bundle requirements accept backward-compatible
+`io.github.lorenzobettini:emf-model-generator:2.0.0`. Bundle requirements accept backward-compatible
 minor and patch updates.
 
 To test a new core version locally, install that project into the local Maven repository, update the
@@ -77,7 +77,7 @@ project and published separately from the core update site. Configure these site
 
 - companion: `emf-model-generator-ocl` p2 repository produced by this project (the release artifact
   or its separately published URL);
-- core: `https://lorenzobettini.github.io/emf-model-generator-update-site/1.1.0`;
+- core: `https://lorenzobettini.github.io/emf-model-generator-update-site/2.0.0`;
 - Eclipse OCL 6.24.0: `https://download.eclipse.org/modeling/mdt/ocl/builds/release/6.24.0`;
 - Eclipse 2026-06: `https://download.eclipse.org/releases/2026-06`.
 
@@ -105,7 +105,7 @@ reported as `EMFValidationKind.VALIDATOR_FAILURE` rather than ordinary
 
 ## Result-based validation
 
-The primary workflow uses the generic validation facilities in EMF Model Generator 1.1.0. The
+The primary workflow uses the generic validation facilities in EMF Model Generator 2.0.0. The
 generator supplies its exact `ResourceSet`, creates one OCL session for the call, and closes it
 afterwards:
 
@@ -242,7 +242,7 @@ flowchart LR
 ```
 
 The companion's only public type is `OCLModelValidator`, which extends the core
-`EMFModelValidator`; generic result, outcome, and exception types come from core 1.1.0. The exported
+`EMFModelValidator`; generic result, outcome, and exception types come from core 2.0.0. The exported
 API contains no Eclipse OCL implementation types. Internal adapters initialize one OCL
 environment per session, use ResourceSet-local validators and resource factories, restore replaced
 local registrations, dispose environments, and unload temporary Complete OCL resources in
