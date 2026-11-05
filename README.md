@@ -172,14 +172,13 @@ and validate the reconstructed graph with OCL:
 
 ```java
 EMFValidationResult roundTripResult = generator.saveAndValidateRoundTrip(
-		null, OCLModelValidator::forOCLinEcore);
+		OCLModelValidator::forOCLinEcore);
 ```
 
 Complete OCL uses the same factory-lambda pattern:
 
 ```java
 EMFValidationResult roundTripResult = generator.saveAndValidateRoundTrip(
-		null,
 		resourceSet -> OCLModelValidator.forCompleteOCL(resourceSet, constraints));
 ```
 
