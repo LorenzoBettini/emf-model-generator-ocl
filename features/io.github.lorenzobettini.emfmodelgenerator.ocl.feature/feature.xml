@@ -2,7 +2,7 @@
 <feature
 	id="io.github.lorenzobettini.emfmodelgenerator.ocl.feature"
 	label="EMF Model Generator OCL"
-	version="0.1.0.qualifier"
+	version="1.0.0"
 	provider-name="Lorenzo Bettini">
 
 	<description url="https://github.com/LorenzoBettini/emf-model-generator-ocl">

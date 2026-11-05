@@ -11,7 +11,7 @@ build. Update a reactor version with the pinned Tycho versions plug-in:
 
 ```sh
 ./mvnw org.eclipse.tycho:tycho-versions-plugin:5.0.4:set-version \
-  -DnewVersion=0.1.0-SNAPSHOT
+  -DnewVersion=1.0.0
 ```
 
 Review changes to every POM, `Bundle-Version`, `feature.xml`, dependency range, and `category.xml`.

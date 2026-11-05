@@ -2,10 +2,10 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: EMF Model Generator OCL Tests
 Bundle-SymbolicName: io.github.lorenzobettini.emfmodelgenerator.ocl.tests
-Bundle-Version: 0.1.0.qualifier
+Bundle-Version: 1.0.0
 Bundle-Vendor: Lorenzo Bettini
 Bundle-RequiredExecutionEnvironment: JavaSE-21
-Require-Bundle: io.github.lorenzobettini.emfmodelgenerator.ocl;bundle-version="[0.1.0,1.0.0)"
+Require-Bundle: io.github.lorenzobettini.emfmodelgenerator.ocl;bundle-version="[1.0.0,2.0.0)"
 Import-Package: org.junit.jupiter.api;version="[6.1.0,7.0.0)",
  org.junit.jupiter.api.io;version="[6.1.0,7.0.0)",
  org.junit.jupiter.api.function;version="[6.1.0,7.0.0)",

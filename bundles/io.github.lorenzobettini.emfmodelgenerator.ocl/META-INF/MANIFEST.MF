@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: EMF Model Generator OCL
 Bundle-SymbolicName: io.github.lorenzobettini.emfmodelgenerator.ocl
-Bundle-Version: 0.1.0.qualifier
+Bundle-Version: 1.0.0
 Bundle-Vendor: Lorenzo Bettini
 Bundle-RequiredExecutionEnvironment: JavaSE-21
 Export-Package: io.github.lorenzobettini.emfmodelgenerator.ocl

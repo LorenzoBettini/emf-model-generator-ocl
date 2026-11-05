@@ -5,7 +5,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>io.github.lorenzobettini</groupId>
 	<artifactId>emf-model-generator-ocl-parent</artifactId>
-	<version>0.1.0-SNAPSHOT</version>
+	<version>1.0.0</version>
 	<packaging>pom</packaging>
 	<name>EMF Model Generator OCL</name>
 	<description>Headless post-generation OCL validation companion for EMF Model Generator</description>

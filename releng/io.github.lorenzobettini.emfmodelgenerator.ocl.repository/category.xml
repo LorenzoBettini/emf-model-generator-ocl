@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
-	<feature url="features/io.github.lorenzobettini.emfmodelgenerator.ocl.feature_0.1.0.qualifier.jar"
-		id="io.github.lorenzobettini.emfmodelgenerator.ocl.feature" version="0.1.0.qualifier">
+	<feature url="features/io.github.lorenzobettini.emfmodelgenerator.ocl.feature_1.0.0.jar"
+		id="io.github.lorenzobettini.emfmodelgenerator.ocl.feature" version="1.0.0">
 		<category name="io.github.lorenzobettini.emfmodelgenerator.ocl"/>
 	</feature>
 	<feature
-		url="features/io.github.lorenzobettini.emfmodelgenerator.ocl.source.feature_0.1.0.qualifier.jar"
-		id="io.github.lorenzobettini.emfmodelgenerator.ocl.source.feature" version="0.1.0.qualifier">
+		url="features/io.github.lorenzobettini.emfmodelgenerator.ocl.source.feature_1.0.0.jar"
+		id="io.github.lorenzobettini.emfmodelgenerator.ocl.source.feature" version="1.0.0">
 		<category name="io.github.lorenzobettini.emfmodelgenerator.ocl.source"/>
 	</feature>
 	<category-def name="io.github.lorenzobettini.emfmodelgenerator.ocl"
