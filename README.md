@@ -260,15 +260,6 @@ in try-with-resources.
 - Callers must validate complete roots and must follow the core generator's lifecycle, including
   `unloadEcoreModels()` after `loadEcoreModel()`.
 
-## Quality and release
-
-See [RELEASING.md](RELEASING.md) for versioning, verification, and publication steps, and
-[DEPENDENCIES.md](DEPENDENCIES.md) for dependency and license information. PIT was investigated but
-is not a build gate: the tests require Tycho's OSGi runtime, while PIT's Maven runner uses a regular
-Maven test classpath. Maintaining a second non-OSGi test setup would duplicate manifest-first
-dependency metadata and would not exercise the production runtime. The real OSGi suite and enforced
-JaCoCo threshold remain the quality gates.
-
 ## License
 
 Eclipse Public License 2.0. See [LICENSE](LICENSE).
